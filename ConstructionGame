@@ -1,12 +1,12 @@
+import java.util.Arrays;
+
 public class ConstructionGame {
     int[][] playarea;
 
     public ConstructionGame(int length, int width) {
         this.playarea = new int[length][width];
         for(int i = 0; i < length; i++){
-            for (int j = 0; j < width; j++){
-                this.playarea[i][j] = 0;
-            }
+           Arrays.fill(this.playarea[i],0);
         }
     }
 
@@ -14,7 +14,7 @@ public class ConstructionGame {
         for(int i=0; i<cubes.length; i++){
             for(int j=0; j<cubes[i].length; j++){
                 if(cubes[i][j]){
-                    this.playarea[i][j] = this.playarea[i][j]+1;
+                    this.playarea[i][j]++;
                 }
             }
         }
@@ -42,7 +42,7 @@ public class ConstructionGame {
     public int getHeight() {
         int height = 0;
         for(int i=0; i < this.playarea.length; i++){
-            for(int j=0; j< this.playarea[i].length; j++){
+            for(int j=0; j < this.playarea[i].length; j++){
                 if(this.playarea[i][j] > height){
                     height = this.playarea[i][j];
                 }
