@@ -1,9 +1,18 @@
+import java.util.HashMap;
+import java.util.Map;
+
 public class PaperStrip {
     public static int minPieces(int[] source, int[] target) {
         int pieces = 0;
         int length = source.length;
+        // Create a mapping of values to their positions in the source array
+        Map<Integer, Integer> sourceIndices = new HashMap<>();
+        for (int i = 0; i < length; i++) {
+            sourceIndices.put(source[i], i);
+        }
+
         for(int targetIndex = 0; targetIndex < length;) {
-            int sourceIndex = findIndex(source, target[targetIndex]);
+            int sourceIndex = sourceIndices.get(target[targetIndex]);
             while (sourceIndex < length && targetIndex < length && target[targetIndex] == source[sourceIndex]) {
                 sourceIndex++;
                 targetIndex++;
