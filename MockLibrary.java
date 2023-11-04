@@ -1,50 +1,78 @@
-import java.lang.reflect.InvocationHandler;
-import java.lang.reflect.Method;
-import java.lang.reflect.Proxy;
 
-// Define a simple Calculator interface
-interface Calculator {
-    int add(int a, int b);
+import java.lang.reflect.*;
+import java.util.*;
+
+interface TestInterface {
+    int calculate(int a, int b);
+    String calculate(String a, String b);
+    String getValue();
 }
 
-// Create a class that implements InvocationHandler to handle method invocations
-class CalculatorProxy implements InvocationHandler {
-    private Object realCalculator; // The real calculator object
+public class MockLibrary implements InvocationHandler {
+    ArrayList<MethodInvocation> methodInvocations = new ArrayList<>();
 
-    // Constructor to set the real calculator
-    public CalculatorProxy(Object realCalculator) {
-        this.realCalculator = realCalculator;
-    }
-
-    // Intercept method invocations and add custom behavior
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        System.out.println("Before invoking the method: " + method.getName());
-        Object result = method.invoke(realCalculator, args); // Invoke the method on the real calculator
-        System.out.println("After invoking the method: " + method.getName());
-        return result;
-    }
-}
-
-public class MockLibrary {
-    public static void main(String[] args) {
-        // Create a real calculator instance
-        Calculator realCalculator = new Calculator() {
-            @Override
-            public int add(int a, int b) {
-                return a + b;
+        String methodName = method.getName();
+        for (MethodInvocation invocation : methodInvocations) {
+            if (invocation.getMethodName().equals(methodName) &&
+                    Arrays.deepEquals(invocation.getArguments(), args)) {
+                return invocation.getReturnValue();
             }
-        };
+        }
 
-        // Create a dynamic proxy for the Calculator interface
-        Calculator calculatorProxy = (Calculator) Proxy.newProxyInstance(
-                Calculator.class.getClassLoader(),
-                new Class[]{Calculator.class},
-                new CalculatorProxy(realCalculator)
-        );
+        throw new IllegalArgumentException("No matching invocation found for method: " + methodName);
+    }
 
-        // Use the dynamic proxy to perform calculations
-        int result = calculatorProxy.add(5, 3);
-        System.out.println("Result: " + result);
+    public MockLibrary when(String method, Object[] args) {
+        methodInvocations.add(new MethodInvocation(method, args, null));
+        return this;
+    }
+
+    public void thenReturn(Object val) {
+        int lastIndex = methodInvocations.size() - 1;
+        methodInvocations.get(lastIndex).setReturnValue(val);
+    }
+
+    public static void main(String[] args) {
+        MockLibrary handler = new MockLibrary();
+        TestInterface ref = (TestInterface) Proxy.newProxyInstance(
+                MockLibrary.class.getClassLoader(),
+                new Class[]{TestInterface.class}, handler);
+
+        handler.when("calculate", new Object[] {1, 2}).thenReturn(3);
+        handler.when("awesome", new Object[] {"a", "b"}).thenReturn("ab");
+
+        System.out.println(ref.calculate(1, 2)); // prints 3
+        System.out.println(ref.calculate("a", "b")); // prints "ab"
     }
 }
+
+class MethodInvocation {
+    private String methodName;
+    private Object[] arguments;
+    private Object returnValue;
+
+    public MethodInvocation(String methodName, Object[] arguments, Object returnValue) {
+        this.methodName = methodName;
+        this.arguments = arguments;
+        this.returnValue = returnValue;
+    }
+
+    public String getMethodName() {
+        return methodName;
+    }
+
+    public Object[] getArguments() {
+        return arguments;
+    }
+
+    public Object getReturnValue() {
+        return returnValue;
+    }
+
+    public void setReturnValue(Object returnValue) {
+        this.returnValue = returnValue;
+    }
+}
+
